@@ -1,0 +1,35 @@
+namespace: hmmb82
+connection:
+  data:
+    MYSQL_PASSWORD: MTIzNA==
+    MYSQL_ROOT_PASSWORD: MTIzNA==
+    MYSQL_USER: Y2Rz
+apache:
+  name: apache
+  image: marianomb82/mmb82-apache:v2
+  imagePullPolicy: IfNotPresent
+  podAntiAffinity: apache
+  podAffinity: mysql
+  replicas: 3
+  livenessProbe:
+    failureThreshold: 5
+    initialDelaySeconds: 60
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5  
+mysql:
+  name: mysql
+  image: marianomb82/mmb82-mysql:v6
+initdb:
+  name: init-db
+  image: marianomb82/mmb82-init_db:v1
+ingress:
+  host: apachehelm.marianomb82.com
+
+  

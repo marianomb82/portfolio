@@ -1,0 +1,26 @@
+services:
+  jenkins_master:
+    image: jenkins/jenkins:2.361.1-lts-jdk11
+    container_name: jenkins_master
+    user: root
+    restart: always
+    ports:
+      - 127.0.0.1:2345:2345
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - ./jenkins:/var/jenkins_home
+
+  jenkins_slave:
+    image: jenkins/jnlp-slave:4.13.3-1-jdk11
+    container_name: jnlp_slave
+    user: root
+    command: -url http://jenkins_master:8080 2936a168d57870a9d42bb882aaf2957043da3e4df8193d47117e85557a4220ee jnlp-slave
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - ./jnlp_slave:/var/jenkins_home
+      - ./jnlp_slave:/root

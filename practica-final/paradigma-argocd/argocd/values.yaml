@@ -1,0 +1,26 @@
+redis-ha:
+  enabled: false
+
+controller:
+  replicas: 1
+
+server:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+
+repoServer:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+
+applicationSet:
+  replicaCount: 2
+
+configs:
+  repositories:
+    paradigma-argocd:
+      url: git@github.com:zasema/paradigma-argocd.git
+      name: paradigma-argocd
+  cm:
+    exec.enabled: true

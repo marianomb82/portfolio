@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    image: zasema/paradigma:latest
+    container_name: paradigma
+    ports:
+      - "8081:8081"
+    environment:
+      PYTHONUNBUFFERED: 1
+    healthcheck:
+      test: curl --fail http://localhost:8081/health || exit 1
+      interval: 30s
+      retries: 5
+      start_period: 5s
+      timeout: 30s

@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |sysadmin7|
+  sysadmin7.vm.define "server1" do |server1|
+    server1.vm.box = "ubuntu/kinetic64"
+    server1.vm.hostname = "vm1wordpress"
+    server1.vm.network "private_network", ip: "192.168.10.21", netmask: "24", virtualbox__intnet: "sysadmtasknet", nic_type: "virtio"
+    #server1.vm.network "private_network", ip: "192.168.10.21", netmask: "24"
+    server1.vm.network "public_network", use_dhcp_assigned_default_route: true
+    server1.vm.network "forwarded_port", guest: 80, host: 8081
+    server1.vm.provider "virtualbox" do |vb1|
+      vb1.memory = "1024"
+      vb1.cpus = 1
+      file_to_disk = "extradisk1.vmdk"
+      unless File.exist?(file_to_disk)
+        vb1.customize ["createmedium", "disk", "--filename", file_to_disk, "--format", "VMDK","--size", 10 * 1024]
+      end
+     vb1.customize ["storageattach", :id, "--storagectl", "SCSI", "--port", 2, "--device", 0, "--type",  "hdd", "--medium", file_to_disk]
+    end
+    server1.vm.provision "shell", path: "scriptvm1/provision_wordpress.sh"
+  end 
+  sysadmin7.vm.define "server2" do |server2|
+    server2.vm.box = "ubuntu/kinetic64"
+    server2.vm.hostname = "vm2elk"
+    server2.vm.network "private_network", ip: "192.168.10.22", netmask: "24", virtualbox__intnet: "sysadmtasknet", nic_type: "virtio"
+    #server2.vm.network "private_network", ip: "192.168.10.22", netmask: "24"
+    server2.vm.network "public_network", use_dhcp_assigned_default_route: true
+    server2.vm.network "forwarded_port", guest: 80, host: 8080
+    server2.vm.network "forwarded_port", guest: 9200, host: 9200
+    server2.vm.provider "virtualbox" do |vb2|
+      vb2.memory = "4096"
+      vb2.cpus = 1
+      file_to_disk = "extradisk2.vmdk"
+      unless File.exist?(file_to_disk)
+        vb2.customize ["createmedium", "disk", "--filename", file_to_disk, "--format", "VMDK","--size", 10 * 1024]
+      end
+      vb2.customize ["storageattach", :id, "--storagectl", "SCSI", "--port", 2, "--device", 0, "--type",  "hdd", "--medium", file_to_disk]
+    end
+    server2.vm.provision "file", source: "scriptvm2/02-beats-input.conf", destination: "/tmp/02-beats-input.conf"
+    server2.vm.provision "file", source: "scriptvm2/10-syslog-filter.conf", destination: "/tmp/10-syslog-filter.conf"
+    server2.vm.provision "file", source: "scriptvm2/30-elasticsearch-output.conf", destination: "/tmp/30-elasticsearch-output.conf"
+    server2.vm.provision "shell", path: "scriptvm2/provision_elk.sh"
+  end
+end

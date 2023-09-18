@@ -1,0 +1,14 @@
+{{- if and .Values.metrics.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "paradigma.fullname"  . }}
+  labels:
+    {{- include "paradigma.labels" . | nindent 4 }}
+spec:
+  endpoints:
+  - port: {{ .Values.metrics.svc.name }}
+  selector:
+    matchLabels:
+      {{- include "paradigma.selectorLabels" . | nindent 6 }}
+{{- end }}

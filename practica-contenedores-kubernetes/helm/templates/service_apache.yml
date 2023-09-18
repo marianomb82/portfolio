@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "helm.labels" . | nindent 4 }} 
+    app: {{ .Values.apache.name }}
+  name: {{ .Values.apache.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: {{ .Values.apache.name }}
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: {{ .Values.apache.name }}

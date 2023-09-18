@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: marianomb82/mmb82-mysql:v6
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=cds
+      - MYSQL_USER=cds
+      - MYSQL_PASSWORD=1234
+    expose:
+      - 3306
+  mysql-setup:
+    image: marianomb82/mmb82-init_db:v1
+    depends_on:
+      - mysql
+    restart: "no"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=cds
+      - MYSQL_USER=cds
+      - MYSQL_PASSWORD=1234  
+      - MYSQL_HOST=mysql
+  apache:
+    image: marianomb82/mmb82-apache:v2
+    ports:
+      - 80:80
+    restart: always
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=cds
+      - DB_PASSWORD=1234
+      - DB_NAME=cds
+volumes:
+  db_data:

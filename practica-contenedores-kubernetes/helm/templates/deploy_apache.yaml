@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}  
+  name: {{ .Values.apache.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{ .Values.apache.replicas }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: {{ .Values.apache.name }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: {{ .Values.apache.name }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.apache.podAntiAffinity }}
+            topologyKey: "kubernetes.io/hostname"
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.apache.podAffinity }}
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: {{ .Values.apache.name }}
+        image: {{ .Values.apache.image }}
+        imagePullPolicy: {{ .Values.apache.imagePullPolicy }}
+        env:
+          - name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: bd-data
+                key: MYSQL_HOST
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: bd-data
+                key: MYSQL_DATABASE
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: bd-credentials
+                key: MYSQL_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: bd-credentials
+                key: MYSQL_PASSWORD
+        livenessProbe:
+          failureThreshold: {{ .Values.apache.livenessProbe.failureThreshold }}
+          httpGet:
+            path: /login.php
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.apache.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.apache.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.apache.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.apache.livenessProbe.timeoutSeconds }}
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /login.php
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.apache.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.apache.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.apache.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.apache.readinessProbe.timeoutSeconds }}
+        ports:
+        - name: apache
+          containerPort: 80
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 60

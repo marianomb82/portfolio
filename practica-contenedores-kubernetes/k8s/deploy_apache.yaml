@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: apache
+  name: apache
+  namespace: kmmb82
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: apache
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: apache
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - apache
+            topologyKey: "kubernetes.io/hostname"
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - mysql
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: apache
+        image: marianomb82/mmb82-apache:v2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: bd-data
+                key: MYSQL_HOST
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: bd-data
+                key: MYSQL_DATABASE
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: bd-credentials
+                key: MYSQL_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: bd-credentials
+                key: MYSQL_PASSWORD
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /login.php
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5        
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /login.php
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        ports:
+        - name: apache
+          containerPort: 80
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 60

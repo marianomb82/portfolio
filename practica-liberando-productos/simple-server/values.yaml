@@ -1,0 +1,18 @@
+namespace: simpleserver
+simpleserver:
+  name: simpleserver
+  image: marianomb82/simple-server:0.0.2
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  livenessProbe:
+    failureThreshold: 5
+    initialDelaySeconds: 60
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 5  
